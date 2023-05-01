@@ -23,8 +23,9 @@ public class DeviceController {
     }
 
     @GetMapping
-    public Page<Device> getDeviceList(Pageable pageable,
-                                      @RequestParam(value = "tags", required = false) List<String> tags) {
+    public Page<Device> getDeviceList(
+            @RequestParam(value = "tags", required = false) List<String> tags,
+            Pageable pageable) {
         if (tags != null && !tags.isEmpty()) {
             return deviceRepository.findAllByTagsContains(tags, pageable);
         }

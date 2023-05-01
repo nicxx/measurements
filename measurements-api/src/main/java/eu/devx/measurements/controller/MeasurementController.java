@@ -3,10 +3,11 @@ package eu.devx.measurements.controller;
 import eu.devx.measurements.model.MeasurementPoint;
 import eu.devx.measurements.repository.MeasurementPointRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/measurement")
@@ -18,7 +19,7 @@ public class MeasurementController {
         this.measurementPointRepository = measurementPointRepository;
     }
 
-    @PostMapping(path = "/{deviceId}/measurement")
+    @PostMapping(path = "/{deviceId}")
     public void saveMeasurement(@PathVariable String deviceId, @RequestParam Double value) {
         MeasurementPoint point = new MeasurementPoint();
         point.setDeviceId(deviceId);
@@ -27,8 +28,8 @@ public class MeasurementController {
         measurementPointRepository.save(point);
     }
 
-    @GetMapping(path = "/{deviceId}/measurement")
-    public List<MeasurementPoint> getMeasurements(@PathVariable String deviceId) {
-        return measurementPointRepository.findAllByDeviceIdOrderByCreatedDesc(deviceId);
+    @GetMapping(path = "/{deviceId}")
+    public Page<MeasurementPoint> getMeasurements(@PathVariable String deviceId, Pageable pageable) {
+        return measurementPointRepository.findAllByDeviceIdOrderByCreatedDesc(deviceId, pageable);
     }
 }
