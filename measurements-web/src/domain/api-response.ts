@@ -1,20 +1,22 @@
-export interface Sort {
+import { ReactNode } from "react";
+
+export interface ResponseSort {
     empty: boolean;
     sorted: boolean;
     unsorted: boolean;
 }
-export interface Pageable {
+export interface ResponsePageable {
     offset: number;
     pageNumber: number;
     pageSize: number;
     paged: boolean;
     unpaged: boolean;
-    sort: Sort;
+    sort: ResponseSort;
 }
-export interface ContentResponse<T> {
+export interface ResponseContent<T> {
     content: T[];
-    sort: Sort;
-    pageable: Pageable;
+    sort: ResponseSort;
+    pageable: ResponsePageable;
     empty: boolean;
     first: boolean;
     last: boolean;
@@ -23,6 +25,10 @@ export interface ContentResponse<T> {
     size: number;
     totalElements: number;
     totalPages: number;
+}
+export interface Entity {
+    id: string;
+    [key: string]: number | string | ReactNode;
 }
 export interface Device {
     id: string;

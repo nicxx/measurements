@@ -1,49 +1,75 @@
 import { Add, ChevronRight, Delete, Edit, Home } from '@mui/icons-material';
-import { Alert, Box, Container, Fab, IconButton, Link, Stack, Tooltip } from "@mui/material";
+import { Box, Container, Fab, IconButton, Link, Tooltip } from "@mui/material";
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import { enqueueSnackbar } from 'notistack';
 import { FC, ReactElement, useEffect, useState } from "react";
 import Breadcrumb from '../components/breadcrumb';
-import TableRowsLoader from '../components/table-loader';
-import { Device } from '../domain/api-response';
+import EnhancedTable, { EnhancedTableColumn } from '../components/enhanced-table';
+import { Entity } from '../domain/api-response';
+import { Page, Sort } from '../domain/pagination';
 import DeviceService from '../services/DeviceService';
+
+const tableColumns: EnhancedTableColumn[] = [
+    {
+        id: 'name',
+        title: 'Device name',
+        sortable: true
+    },
+    {
+        id: 'created',
+        title: 'Created',
+        sortable: true,
+        align: 'right'
+    },
+    {
+        id: 'modified',
+        title: 'Modified',
+        sortable: true,
+        align: 'right'
+    },
+    {
+        id: 'actions',
+        title: 'Actions',
+        sortable: false,
+        align: 'right'
+    },
+];
 
 const DeviceList: FC = (): ReactElement => {
 
-    const [devices, setDevices] = useState<Device[]>([]);
+    const [devices, setDevices] = useState<Entity[]>([]);
+    const [total, setTotal] = useState(0);
+    const [loaded, setLoaded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deviceId, setDeviceId] = useState('');
     const [deviceName, setDeviceName] = useState('');
+    const [sort, setSort] = useState<Sort>({ field: 'modified', direction: 'desc' });
+    const [page, setPage] = useState<Page>({ index: 0, size: 10 });
 
     useEffect(() => {
-        loadDeviceList();
-    }, []);
-
-    const loadDeviceList = () => {
         setLoading(true);
-        DeviceService.getAll()
-            .then((response) => setDevices(response.data.content))
+        DeviceService.getAll(sort, page)
+            .then((response) => {
+                setDevices(response.data.content);
+                setTotal(response.data.totalElements);
+            })
             .catch((e) => {
                 enqueueSnackbar('There was an error loading the device list.', { variant: 'error' });
                 console.error('There was an error: ', e);
             })
-            .finally(() => setLoading(false));
-    }
+            .finally(() => {
+                setLoading(false);
+                setLoaded(true);
+            });
+    }, [loaded, sort, page]);
 
     const handleEditOpen = (deviceId: string, deviceName: string) => {
         setDeviceId(deviceId);
@@ -80,7 +106,7 @@ const DeviceList: FC = (): ReactElement => {
                 setEditDialogOpen(false);
                 setDeviceName('');
                 setDeviceId('');
-                loadDeviceList();
+                setLoaded(false);
             });
     }
 
@@ -100,9 +126,27 @@ const DeviceList: FC = (): ReactElement => {
                 setDeleteDialogOpen(false);
                 setDeviceName('');
                 setDeviceId('');
-                loadDeviceList();
+                setLoaded(false);
             });
     }
+
+    const deviceActions = (device: Entity) => <>
+        <Tooltip title="Delete">
+            <IconButton aria-label="delete" onClick={() => handleDeleteOpen(device.id, device.name as string)}>
+                <Delete />
+            </IconButton>
+        </Tooltip>
+        <Tooltip title="Edit">
+            <IconButton aria-label="edit" onClick={() => handleEditOpen(device.id, device.name as string)}>
+                <Edit />
+            </IconButton>
+        </Tooltip>
+        <Tooltip title="Measurements">
+            <IconButton aria-label="measurements" LinkComponent={Link} href={`/devices/${device.id}`}>
+                <ChevronRight />
+            </IconButton>
+        </Tooltip>
+    </>
 
     return (
         <Box component="main" sx={{ p: 3 }} marginTop={10}>
@@ -115,61 +159,16 @@ const DeviceList: FC = (): ReactElement => {
                     }
                 ]} />
 
-                <TableContainer component={Paper}>
-                    <Table sx={{ minWidth: 650 }} aria-label="devices table">
-
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Device name</TableCell>
-                                <TableCell align="right">Created</TableCell>
-                                <TableCell align="right">Modified</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-
-                        {loading &&
-                            <TableRowsLoader rows={1} columns={4} />
-                        }
-                        {!loading &&
-                            <TableBody>
-                                {devices.map((device) =>
-                                    <TableRow key={device.id}>
-                                        <TableCell component="th" scope="row">
-                                            {device.name}
-                                        </TableCell>
-                                        <TableCell align="right">{device.created}</TableCell>
-                                        <TableCell align="right">{device.modified}</TableCell>
-                                        <TableCell align="right">
-                                            <Tooltip title="Delete">
-                                                <IconButton aria-label="delete" onClick={() => handleDeleteOpen(device.id, device.name)}>
-                                                    <Delete />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Edit">
-                                                <IconButton aria-label="edit" onClick={() => handleEditOpen(device.id, device.name)}>
-                                                    <Edit />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Measurements">
-                                                <IconButton aria-label="measurements" LinkComponent={Link} href={`/devices/${device.id}`}>
-                                                    <ChevronRight />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                                {devices.length === 0 &&
-                                    <TableRow>
-                                        <TableCell colSpan={4}>
-                                            <Stack sx={{ width: '100%', textAlign: 'center' }} spacing={2}>
-                                                <Alert severity="info" sx={{ width: '100%', '& .MuiAlert-message': { textAlign: "center", width: "inherit" } }}>There are no devices saved.</Alert>
-                                            </Stack>
-                                        </TableCell>
-                                    </TableRow>}
-                            </TableBody>
-                        }
-                    </Table>
-                </TableContainer>
+                <EnhancedTable
+                    columns={tableColumns}
+                    data={devices.map(device => Object.assign({}, device, { "actions": deviceActions(device) }))}
+                    total={total}
+                    loading={loading}
+                    sort={sort}
+                    onSortChange={setSort}
+                    page={page}
+                    onPageChange={setPage}
+                />
 
                 <Tooltip title="Add">
                     <Fab color="primary" aria-label="add" onClick={handleCreateOpen} sx={{
