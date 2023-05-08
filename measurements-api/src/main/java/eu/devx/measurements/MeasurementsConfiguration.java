@@ -23,7 +23,7 @@ public class MeasurementsConfiguration {
             public void addCorsMappings(CorsRegistry registry) {
                 registry
                         .addMapping("/**")
-                        .allowedOrigins(configurationProperties.getAllowedOrigins())
+                        .allowedOriginPatterns(configurationProperties.getAllowedOrigins())
                         .allowedMethods(configurationProperties.getAllowedMethods());
             }
         };
